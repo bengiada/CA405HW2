@@ -132,7 +132,7 @@ class MeshDrawer {
 		
 		//lightX, lightY
 		gl.uniform3f(this.lightPosLoc, lightX, lightY, lightZ); //TO - make this from light to vertex
-		gl.uniform3f(this.viewPosLoc, 0,0,3);
+		gl.uniform3f(this.viewPosLoc, 0,0,-3);
 
 		updateLightPos();
 		gl.drawArrays(gl.TRIANGLES, 0, this.numTriangles);
@@ -339,6 +339,7 @@ const meshFS = `
 
 			void main()
 			{
+				vec3 normals = v_normal;
 				vec4 baseTexture = texture2D(tex, v_texCoord);
 				if(showSecondTex && showTex){ //only blending
 					vec4 tempTexture = texture2D(tex2, v_texCoord);
@@ -367,6 +368,10 @@ const meshFS = `
 							? (2.0 * baseTexture.b * tempTexture.b)
 							: (1.0 - 2.0 * (1.0 - baseTexture.b) * (1.0 - tempTexture.b));
 					}
+					else if(blendingType == 4.0){//normal mapping
+						normals = vec3(tempTexture.x+v_normal.x, tempTexture.y+v_normal.y, tempTexture.z+v_normal.z);
+					
+					}
 				}
 				else if(showSecondTex){
 					baseTexture = texture2D(tex2, v_texCoord);
@@ -383,7 +388,7 @@ const meshFS = `
 					//TO DO : use color somewhere?
 
 					//TO DO - also normalize the light Pos??
- 					float cos_angle = dot(normalize(v_normal), normalize(lightPos*-1.0));
+ 					float cos_angle = dot(normalize(normals), normalize(lightPos*-1.0));
 
 					vec4 diffuseLighting;
 					if(cos_angle > 0.0){
@@ -396,19 +401,20 @@ const meshFS = `
 						vec3 to_light = lightPos*-1.0 - v_pos;
 						to_light = normalize(to_light)*-1.0;
 
-						vec3 normal_normal = normalize(v_normal);
+						vec3 normal_normal = normalize(normals);
 
 						vec3 reflected_light = 2.0 * normal_normal * dot(normal_normal, to_light) + to_light * -1.0;
 
 						float specular_cos_angle = dot(normalize(reflected_light), normalize(vec3(0,0,2)));
-						specular_cos_angle = clamp(specular_cos_angle, 0.0, 1.0);
+						if (specular_cos_angle > 0.0) {
+							specular_cos_angle = clamp(specular_cos_angle, 0.0, 1.0);
 
+							
+							specular_cos_angle = pow(specular_cos_angle,1.0/specular);
+							specularLighting = vec4(specular_cos_angle,specular_cos_angle,specular_cos_angle,0.0);
+						}
 						
-						specular_cos_angle = pow(specular_cos_angle,1.0/specular);
-						specularLighting = vec4(specular_cos_angle,specular_cos_angle,specular_cos_angle,0.0);
 					}
-
-					
 
 					//is ambient + diffuse + specular right??? TODO
 					gl_FragColor = baseTexture * (ambientLighting + diffuseLighting+ specularLighting);

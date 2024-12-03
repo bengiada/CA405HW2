@@ -1,0 +1,12 @@
+The initial position of the light is at (1,1,1) and it is assumed that the viewer is at (0,0,3)
+
+A second texture can be added and the blending style between the first and the second texture can be selected.
+The texture blending parameter only affects the "average" blending, which is a linear interpolation between two textures depending on that parameter.
+
+For normal mapping, the second texture should be the normal mapping texture. 
+It calculates the normals by adding the normals encoded in the texture and the object together for each vertex location.
+The effect is only visible when light is enabled. 
+
+Github Link: https://github.com/bengiada/CS405HW2
+
+Bengi Ada Tüfekci 30720
